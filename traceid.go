@@ -7,7 +7,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-var Header = http.CanonicalHeaderKey("X-TraceId")
+var Header = http.CanonicalHeaderKey("TraceId")
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
