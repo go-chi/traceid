@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 )
 
 var Header = http.CanonicalHeaderKey("TraceId")
