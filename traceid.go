@@ -14,7 +14,7 @@ func Middleware(next http.Handler) http.Handler {
 		ctx := r.Context()
 
 		traceID := r.Header.Get(Header)
-		if uuid.FromStringOrNil(traceID) == uuid.Nil {
+		if _, err := uuid.Parse(traceID); err != nil {
 			traceID = uuidV7()
 		}
 
