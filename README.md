@@ -4,9 +4,57 @@ Go package that helps create and pass `TraceId` header among microservices for s
 
 The generated `TraceId` value is [UUIDv7](https://datatracker.ietf.org/doc/html/draft-peabody-dispatch-new-uuid-format-03#name-uuid-version-7), which lets you infer the time of the trace creation from its value.
 
-## Example
+## traceid.Middleware example
 
-TODO
+```go
+package main
+
+import (
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog/v2"
+	"github.com/go-chi/traceid"
+)
+
+func main() {
+	r := chi.NewRouter()
+
+	r.Use(traceid.Middleware)
+	r.Use(httplog.RequestLogger(logger()))
+	r.Use(middleware.Recoverer)
+
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// Log traceId to request logger.
+			traceID := traceid.FromContext(r.Context())
+			httplog.LogEntrySetField(ctx, "traceId", slog.StringValue(traceID))
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
+```
+
+See [example/main.go](./example/main.go)
+
+## traceid.SetHeader()
+
+```go
+func main() {
+    // Set TraceId in context, if not set yet.
+    ctx := traceid.NewContext(context.Background())
+
+    // Make a request with TraceId header.
+    req, _ := http.NewRequest("GET", "http://localhost:3333/proxy", nil)
+    req.WithContext(ctx)
+    traceid.SetHeader(ctx, req)
+    
+    resp, err := resp.Do(req)
+    //...
+}
+}
+```
 
 ## Get time from UUIDv7 value
 
