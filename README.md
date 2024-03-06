@@ -41,20 +41,45 @@ func main() {
 
 See [example/main.go](./example/main.go)
 
-## Example - making HTTP requests
+## Example: Send HTTP request with TraceId header
 
 ```go
-func main() {
-    // Set TraceId in context, if not set from parent ctx yet.
-    ctx := traceid.NewContext(context.Background())
+import (
+	"github.com/go-chi/traceid"
+)
 
-    // Make a request with TraceId header.
-    req, _ := http.NewRequest("GET", "http://localhost:3333/proxy", nil)
-    req.WithContext(ctx)
-    traceid.SetHeader(ctx, req)
-    
-    resp, err := resp.Do(req)
-    //...
+func main() {
+	// Set TraceId in context, if not set from parent ctx yet.
+	ctx := traceid.NewContext(context.Background())
+
+	// Make a request with TraceId header.
+	req, _ := http.NewRequestWithContext(ctx, "GET", "http://localhost:3333/proxy", nil)
+	traceid.SetHeader(ctx, req)
+
+	resp, err := http.DefaultClient.Do(req)
+	//...
+}
+```
+
+## Example: Set TraceId header in all outgoing HTTP requests globally
+
+```go
+import (
+	"github.com/go-chi/traceid"
+	"github.com/go-chi/transport"
+)
+
+func main() {
+	// Send TraceId in all outgoing HTTP requests.
+	http.DefaultTransport = transport.Chain(
+		http.DefaultTransport,
+		transport.SetHeader("User-Agent", "my-app/v1.0.0"),
+		traceid.Transport,
+	)
+	
+	// This will automatically send TraceId header.
+	req, _ := http.NewRequest("GET", "http://localhost:3333/proxy", nil)
+	_, _ = http.DefaultClient.Do(req)
 }
 ```
 
@@ -65,7 +90,7 @@ $ go run github.com/go-chi/traceid/cmd/traceid 018e0ee7-3605-7d75-b344-01062c6fd
 2024-03-05 14:56:57.477 +0100 CET
 ```
 
-### Create new UUIDv7:
+You can also create a new UUIDv7:
 ```
 $ go run github.com/go-chi/traceid/cmd/traceid
 018e0ee7-3605-7d75-b344-01062c6fd8bc

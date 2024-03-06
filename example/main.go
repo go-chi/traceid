@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -12,11 +13,27 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httplog/v2"
 	"github.com/go-chi/traceid"
+	"github.com/go-chi/transport"
 )
 
 func main() {
-	r := chi.NewRouter()
+	// Set TraceId in all outgoing HTTP requests globally.
+	http.DefaultTransport = transport.Chain(
+		http.DefaultTransport,
+		transport.SetHeader("User-Agent", "my-app/v1.0.0"),
+		traceid.Transport,
+	)
 
+	// Send test request.
+	go func() {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(800)+200))
+
+		req, _ := http.NewRequest("GET", "http://localhost:3333/proxy/proxy", nil)
+		_, _ = http.DefaultClient.Do(req)
+	}()
+
+	// HTTP server with TraceId middleware + logging.
+	r := chi.NewRouter()
 	r.Use(traceid.Middleware)
 	r.Use(httplog.RequestLogger(logger()))
 	r.Use(middleware.Recoverer)
