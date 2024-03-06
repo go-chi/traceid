@@ -1,10 +1,13 @@
 # TraceId
 
-Go package that helps create and pass `TraceId` header among microservices for simple tracing capabilities and log grouping.
+Go pkg to propagate `TraceId` header across multiple services.
 
-The generated `TraceId` value is [UUIDv7](https://datatracker.ietf.org/doc/html/draft-peabody-dispatch-new-uuid-format-03#name-uuid-version-7), which lets you infer the time of the trace creation from its value.
+- Enables simple tracing capabilities and log grouping.
+- The value can be exposed to end-users in case of an error.
+- The value is [UUIDv7](https://datatracker.ietf.org/doc/html/draft-peabody-dispatch-new-uuid-format-03#name-uuid-version-7), which lets you [infer the timestamp](https://github.com/go-chi/traceid?tab=readme-ov-file#get-time-from-uuidv7-value).
+- Unlike [OTEL](https://pkg.go.dev/go.opentelemetry.io/otel), this package doesn't trace spans or metrics, doesn't require any backend and doesn't have large dependencies (GRPC).
 
-## traceid.Middleware example
+## Example - HTTP middleware
 
 ```go
 package main
@@ -38,11 +41,11 @@ func main() {
 
 See [example/main.go](./example/main.go)
 
-## traceid.SetHeader()
+## Example - making HTTP requests
 
 ```go
 func main() {
-    // Set TraceId in context, if not set yet.
+    // Set TraceId in context, if not set from parent ctx yet.
     ctx := traceid.NewContext(context.Background())
 
     // Make a request with TraceId header.
@@ -52,7 +55,6 @@ func main() {
     
     resp, err := resp.Do(req)
     //...
-}
 }
 ```
 
