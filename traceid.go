@@ -9,21 +9,6 @@ import (
 
 var Header = http.CanonicalHeaderKey("TraceId")
 
-func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		traceID := r.Header.Get(Header)
-		if _, err := uuid.Parse(traceID); err != nil {
-			traceID = uuidV7()
-		}
-
-		ctx = context.WithValue(ctx, ctxKey{}, traceID)
-		w.Header().Set(Header, traceID)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 type ctxKey struct{}
 
 func FromContext(ctx context.Context) string {
@@ -32,7 +17,7 @@ func FromContext(ctx context.Context) string {
 }
 
 func NewContext(ctx context.Context) context.Context {
-	if v, ok := ctx.Value(ctxKey{}).(string); ok && v != "" {
+	if traceID, ok := ctx.Value(ctxKey{}).(string); ok && traceID != "" {
 		return ctx
 	}
 
