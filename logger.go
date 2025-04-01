@@ -5,8 +5,10 @@ import (
 	"log/slog"
 )
 
+var LogKey string = "traceId"
+
 /*
-You can pass slog.Handler and logKey, and all the logs would automatically log
+You can pass slog.Handler, and all the logs would automatically log
 the traceId if logging with context is used.
 
 	slog.Log()
@@ -18,7 +20,7 @@ the traceId if logging with context is used.
 Example:
 
 	ctx := traceid.NewContext(context.Background())
-	handler := traceid.NewLoggerWrapper(slog.NewJSONHandler(os.Stdout, nil), "traceId")
+	handler := traceid.LogHandler(slog.NewJSONHandler(os.Stdout, nil))
 	logger := slog.New(handler)
 	logger.InfoContext(ctx, "message")
 
@@ -26,40 +28,36 @@ This would log
 
 	{"time":"2025-04-01T13:17:43.097789397Z","level":"INFO","msg":"message","traceId":"0195f180-2939-7bc4-bffe-838eb3c62526"}
 */
-func NewLoggerWrapper(handler slog.Handler, logKey string) slog.Handler {
-	return &wrapperLogger{
+func LogHandler(handler slog.Handler) slog.Handler {
+	return &logHandler{
 		handler: handler,
-		key:     logKey,
 	}
 }
 
-type wrapperLogger struct {
+type logHandler struct {
 	handler slog.Handler
-	key     string
 }
 
-func (l *wrapperLogger) Enabled(ctx context.Context, level slog.Level) bool {
+func (l *logHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return l.handler.Enabled(ctx, level)
 }
 
-func (l *wrapperLogger) Handle(ctx context.Context, record slog.Record) error {
+func (l *logHandler) Handle(ctx context.Context, record slog.Record) error {
 	if traceID := FromContext(ctx); traceID != "" {
-		record.AddAttrs(slog.String(l.key, traceID))
+		record.AddAttrs(slog.String(LogKey, traceID))
 	}
 
 	return l.handler.Handle(ctx, record)
 }
 
-func (l *wrapperLogger) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &wrapperLogger{
+func (l *logHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &logHandler{
 		handler: l.handler.WithAttrs(attrs),
-		key:     l.key,
 	}
 }
 
-func (l *wrapperLogger) WithGroup(name string) slog.Handler {
-	return &wrapperLogger{
+func (l *logHandler) WithGroup(name string) slog.Handler {
+	return &logHandler{
 		handler: l.handler.WithGroup(name),
-		key:     l.key,
 	}
 }
